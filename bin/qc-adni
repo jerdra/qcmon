@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 Usage: 
-    qc_adni_hpi [options] <nifti> <output_prefix>  
+    qc-adni [options] <nifti> <output_prefix>  
 
 Arguments: 
     <nifti>                 Specify a single NIFTI file to be run 
@@ -12,6 +12,8 @@ Options:
     -r, --valid_radii RADII_LIST              Specify a list of valid radii as: 'a,b,c,d'. [default = '15,30']
     -h, --help                      Display help
     -v, --verbose                   Verbose logging 
+    -d, --debug                     Output additional info for debugging
+    -l, --log-dir LOGDIR            Create a logfile with <nifti_prefix>.log and output to logging directory 
 
 This qc pipeline computes the absolute and relative T1 intensities of the 5 major balls within
 the ADNI phantom. Reliability of contrast over time is key to anatomical measures such as 
@@ -33,7 +35,6 @@ Written by: Jerry Jeyachandra
 import os, sys
 import tempfile
 import logging
-
 from subprocess import Popen, PIPE
 
 from skimage.morphology import erosion, dilation, reconstruction
@@ -50,10 +51,6 @@ from docopt import docopt
 
 #Study directory
 data_dir = '/archive/data'
-
-logging.basicConfig(level=logging.WARN, 
-        format="[%(name)s] %(levelname)s: %(message)s")
-logger = logging.getLogger(os.path.basename(__file__))
 
 def animate_volume(vol,output,cmin=None,cmax=None,fps=15): 
     '''
@@ -167,13 +164,20 @@ def axialize_LPI(nii_path):
     Output: 
         Full path to axialized nifti file
     '''
+
+    
     
     tmpdir = tempfile.mkdtemp(prefix='adni-') 
+    logger.debug('Writing axialized nifti {} to {}'.format(nii_path,tmpdir))
+
     cmd = "3daxialize -prefix {}/adni-lpi.nii.gz -orient LPI {}".format(tmpdir,nii_path) 
+
     p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)  
     std, err = p.communicate()     
+
     if p.returncode: 
-        pass #add logging
+        logger.error('Failed axialization with error: {}'.format(err))
+        sys.exit(1) 
 
     return os.path.join(tmpdir,'adni-lpi.nii.gz')
 
@@ -194,7 +198,7 @@ def gauss_blur(vol,sig):
     return blur_vol
 
 
-def write_error_record(axial_vol,sph_masks,output,scan): 
+def write_error_record(axial_vol,sph_masks,output): 
     '''
     Generates an mp4 record in output showing estimated spheres overlayed on axialized image 
 
@@ -244,13 +248,31 @@ def gen_sphere_masks(labels,region_list):
     return (close_gaps(labels == region.label).astype(np.bool)
             for region in region_list)
 
+def compute_coverage_ratios(regions): 
+    '''
+    Logging helper function that computes area ratios of each extracted region
+
+    Arguments: 
+        regions                         List of skimage.measure.regionprops
+
+    Outputs: 
+        cvg_ratio                       List of coverage ratios relative to largest mass
+    '''
+
+    #Get estimated areas, sort and compute ratios
+    areas = np.array([r.area for r in regions], dtype=np.float)
+    sort_ind = np.argsort(-areas) 
+    cvg_ratio = areas[sort_ind]/areas.max()  
+
+    return cvg_ratio
+
 def process_phantom(nifti,output_prefix,valid_radii,mp4=None): 
     '''
     Implementation of qc pipeline contrast/intensity extraction 
 
     Arguments: 
         nifti           Single phantom scan 
-        output          Output directory to store .mp4 quality check and qc to
+        output          Output directory to store .mp4 quality check and qc toFNI/2014.12.16
 
     '''
     #Set up functionals
@@ -282,6 +304,12 @@ def process_phantom(nifti,output_prefix,valid_radii,mp4=None):
     valid_regions = filter_region_radius(regions,valid_radii) 
     filtered_regions = filter_region_intensity(high_pass(axial_vol),label_vol,valid_regions) 
 
+    logger.debug('Extracted {} regions with coverage ratios: '.format(len(filtered_regions)) \
+            + '\n'.join([str(s) for s in compute_coverage_ratios(filtered_regions)]))
+
+    logger.debug('Raw areas of regions: \n' \
+            + '\n'.join(sorted([str(r.area) for r in filtered_regions],reverse=True)))
+
     #Get ADNI contrasts from axialized volume 
     logger.info('Computing contrasts and intensities...')
     gen_sph_masks = gen_sphere_masks(label_vol,filtered_regions)
@@ -290,11 +318,13 @@ def process_phantom(nifti,output_prefix,valid_radii,mp4=None):
     if mp4: 
         logger.info('Generating .mp4 video...')
         gen_sph_masks = gen_sphere_masks(label_vol,filtered_regions)     
-        write_error_record(axial_vol,gen_sph_masks,output_prefix,scan)
+        write_error_record(axial_vol,gen_sph_masks,output_prefix)
         logger.info('.mp4 video written to {}_spheres.mp4'.format(output_prefix))
 
     logger.info('Writing qc report to: {}_stats.csv'.format(output_prefix))
     write_report(intensities,contrasts,output_prefix)
+
+    logger.info('qc-adni completed succcessfully: [CODE-SUCCESS]')
 
 def write_report(intensities,contrasts,output): 
     '''
@@ -324,6 +354,26 @@ def write_report(intensities,contrasts,output):
         full_row = ints + ',' + contrasts 
         csv.write(full_row) 
 
+def initialize_logging(nifti_base,log_dir=None): 
+    '''
+    Initialize and configure logging 
+    '''
+
+    global logger
+
+    if log_dir: 
+        #Output to unique logging file based on nifti_base
+        logging.basicConfig(filename = os.path.join(log_dir,nifti_base+'.log'), level=logging.WARN,
+                format="[%(name)s] %(levelname)s: %(message)s")
+    else: 
+        logging.basicConfig(level=logging.WARN, 
+                format="[%(name)s] %(levelname)s: %(message)s")
+
+    logger = logging.getLogger(os.path.basename(__file__))
+
+
+
+
 def main(): 
 
     #Parse arguments
@@ -336,8 +386,19 @@ def main():
     valid_radii     =   arguments['--valid_radii']
 
     verbose         =   arguments['--verbose'] 
+    debug           =   arguments['--debug']
+    log_dir         =   arguments['--log-dir'] 
 
-    if verbose: logger.setLevel(logging.INFO) 
+
+    #Pull out nifti file name 
+
+    nifti_base = output_prefix.split('/')[-1]
+    initialize_logging(nifti_base,log_dir)
+
+    if verbose: 
+        logger.setLevel(logging.INFO) 
+    elif debug: 
+        logger.setLevel(logging.DEBUG)
 
     if valid_radii:
         valid_radii = np.array(valid_radii.split(','),dtype=np.int)
