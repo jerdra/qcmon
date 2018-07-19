@@ -28,33 +28,7 @@ try
     nb0 = length(find(bval==0));
     bvalueall=bval(find(bval>0));
     bvalue=bvalueall(1);
-
-    % initalize outputs
-    disp('opening output files');
-    outname01 = strcat(output_prefix, 'Section2.3.1_SNR_ADC.csv');
-    outname02 = strcat(output_prefix, 'Section2.3.2_B0DistortionRatio.csv');
-    outname03 = strcat(output_prefix, 'Section2.3.3_EddyCurrentDistortions.csv');
-    outname04 = strcat(output_prefix, 'Section2.3.4_AveNyqRatio.csv');
-    outname05 = strcat(output_prefix, 'Section2.3.5_FAvalues.csv');
-
-    fid01 = fopen(outname01, 'w');
-    fid02 = fopen(outname02, 'w');
-    fid03 = fopen(outname03, 'w');
-    fid04 = fopen(outname04, 'w');
-    fid05 = fopen(outname05, 'w');
-
-    % print headers
-    fprintf(fid01, '%s,%s,%s,%s,%s\n', ...
-                   'aveSNR_b0', 'CoV_SNR_b0(%)', 'aveSNR_dwi','%CoV_SNR_dwi(%)', 'ADC');
-    fprintf(fid02, '%s\n', ...
-                   'b0_distortion_ratio');
-    fprintf(fid03, '%s,%s\n', ...
-                   'avevoxshift','percent_errorvoxshift');
-    fprintf(fid04, '%s\n', ...
-                   'AVENyqratio');
-    fprintf(fid05, '%s,%s\n', ...
-                   'AVE FA','STD FA');
-
+    
     % load DWI, averaging over 3 central slices. dim1,2=AXIAL, dim3=all directions)
     dims = size(dwi.vol);
     central_slice = ceil(dims(3)/2);
@@ -148,17 +122,24 @@ try
     [n,x] = hist(fav,30); plot(x, n, 'k-');
     title(['FA mean(std)=', num2str(aveFA, '%5.3f'), '(', num2str(stdFA, '%5.3f'), ')']);
 
-    %% Print cumulative values to files
-    fprintf(fid01, '%5.2f,%5.2f,%5.2f,%5.2f,%5.2f\n', ...
-                   AVEsnr0, CVsnr0, AVEsnrDWI, CVsnrDWI, ADC)
-    fprintf(fid02, '%5.3f\n', ...
-                   RatioB0)
-    fprintf(fid03, '%7.4f,%7.4f\n', ...
-                   avevoxsh, errvoxsh)
-    fprintf(fid04, '%5.3f\n', ...
-                   NyqRatio);
-    fprintf(fid05, '%7.4f,%7.4f\n', ...
-                   aveFA, stdFA);
+    %% Write values into struct --> encode as json --> write to single output file
+    j.avg_SNR_B0 = AVEsnr0;
+    j.cov_SNR_B0 = CVsnr0;
+    j.avg_SNR_DWI = AVEsnrDWI;
+    j.vox_SNR_DWI = CVsnrDWI;
+    j.adc = ADC;
+    j.b0_distortion_ratio = RatioB0;
+    j.avg_voxel_shift = avevoxsh;
+    j.percent_error_voxel_shift = errvoxsh;
+    j.avg_FA = aveFA;
+    j.std_FA = stdFA;
+    j.pipeline = 'qa_dti';
+    encoded_j = jsonencode(j); 
+    output = strcat(output_prefix, '_qadti_output.json');
+    fid = fopen(output, 'w');
+    fprintf(fid,encoded_j); 
+    fclose(fid); 
+                   
     close all
     exit
 catch
