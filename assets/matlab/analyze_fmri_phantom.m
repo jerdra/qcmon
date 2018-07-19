@@ -20,10 +20,8 @@ try
     % load in the data as I4d LOL (untouched prevents scaling)
     I4d = load_untouch_nii(input);
     I4d = I4d.img;
-
-    outflname=strcat(output_prefix, '_stats.csv');
-    fid=fopen(outflname,'w');
-    count=fprintf(fid, '%s,%s,%s,%s,%s,%s,%s\n', 'mean','std','%fluct','drift','snr','sfnr','rdc');
+    
+    j_struct = struct; 
 
     more off;
     clear roi;
@@ -265,10 +263,7 @@ try
         ylabel('freq drift, Hz');
         grid
     end
-
-    % print figures and txt file results
-    count=fprintf(fid,'%09.3f,%09.3f,%09.3f,%09.3f,%09.3f,%09.3f,%09.3f\n', meanI,sd,sd*100/m,100*drift,snr,sfnrI,rdc);
-
+    
     fig1name=strcat(output_prefix, '_images.jpg');
     fig2name=strcat(output_prefix, '_plots.jpg');
 
@@ -276,6 +271,22 @@ try
     print('-f2', '-djpeg', fig2name)
     close all
     exit
+    
+    %Write into JSON
+    j_struct.mean = meanI; 
+    j_struct.std = sd; 
+    j_struct.percent_fluct = sd*100/m; 
+    j_struct.drift = 100*drift; 
+    j_struct.SNR = snr; 
+    j_struct.SFNR = sfnrI; 
+    j_struct.RDC = rdc;
+    j_struct.pipeline = 'qc_fbirn_fmri'; 
+    j_encoded = jsonencode(j_struct)
+    %Write into file
+    outflname=strcat(output_prefix, '_stats.json');
+    fid=fopen(outflname,'w');
+    count=fprintf(fid, j_encoded);
+    
 catch
     exit(1)
 end
