@@ -306,23 +306,15 @@ def write_report(intensities,contrasts,output):
         output              Output directory 
     '''
 
-    with open(output+'_stats.csv','w') as csv: 
-        
-        #Write header
-        int_header = ','.join(['int{}'.format(i+1) 
-            for i in range(len(intensities))])
 
-        cont_header = ','.join(['contrast{}'.format(i+1) 
-            for i in range(len(contrasts))])
+    #JSON output version 
+    j_dict = {'int{}'.format(i):intensity for i,intensity in enumerate(intensities)}
+    j_dict.update({'contrast{}'.format(i):contrast for contrast in enumerate(contrasts)})
 
-        full_header = int_header + ',' + cont_header 
-        csv.write(full_header + '\n') 
-        
-        #Write qc output
-        ints = ','.join([str(intensity) for intensity in intensities])
-        contrasts = ','.join([str(contrast) for contrast in contrasts])
-        full_row = ints + ',' + contrasts 
-        csv.write(full_row) 
+    with open(output+'_stats.json','w') as jfile: 
+
+        json.dump(j_dict,jfile) 
+
 
 def main(): 
 
