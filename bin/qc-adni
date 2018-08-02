@@ -309,7 +309,7 @@ def write_report(intensities,contrasts,output):
 
     #JSON output version 
     j_dict = {'int{}'.format(i):intensity for i,intensity in enumerate(intensities)}
-    j_dict.update({'contrast{}'.format(i):contrast for contrast in enumerate(contrasts)})
+    j_dict.update({'contrast{}'.format(i):contrast for i,contrast in enumerate(contrasts)})
 
     with open(output+'_stats.json','w') as jfile: 
 
