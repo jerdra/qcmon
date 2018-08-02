@@ -133,6 +133,7 @@ try
     j.percent_error_voxel_shift = errvoxsh;
     j.avg_FA = aveFA;
     j.std_FA = stdFA;
+    j.nyq_ratio = NyqRatio; 
     j.pipeline = 'qa_dti';
     encoded_j = jsonencode(j); 
     output = strcat(output_prefix, '_qadti_output.json');
