@@ -97,7 +97,7 @@ def main(nifti, bvec, bval, output_prefix, accel='n'):
     matlab_path = os.path.join(qcmon_base,'assets/matlab')
 
     cmd = (r"addpath(genpath('{}')); analyze_dti_phantom('{}','{}','{}','{}','{}')".format(
-        matlab_path, nifti, fa, bval, output_path, accel))
+        matlab_path, nifti, fa, bval, output_path, 'y' if accel else 'n'))
     run('matlab -nodisplay -nosplash -r "{}"'.format(cmd))
 
     shutdown()
@@ -121,13 +121,6 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.WARN)
-
-    # acceleration on/off
-    if not accel:
-        accel = 'n'
-    if accel not in ['y', 'n']:
-        logger.error('accel={} invalid, should be y/n'.format(accel))
-        shutdown(returncode=1)
 
     # ensure output directory exists
     output_dir = os.path.dirname(os.path.abspath(output))

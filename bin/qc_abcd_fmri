@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+'''
+Python wrapper for formatting a command toward fBIRN_QA.m, the ABCD fMRI phantom pipeline. 
+
+Usage: 
+    qc_abcd_fmri [options] <nifti> <dcm> <json> <output> 
+
+Arguments: 
+    <nifti>                 Full path to 4D nifti volume
+    <dcm>                   Full path to dcm file (for header scraping) 
+    <json>                  Full path to json file (header scraping) 
+    <output>                Full path to qc output folder 
+
+Optional: 
+    -v, --verbose           Verbose logging
+
+Requirements: 
+    FSL
+    MATLAB/R2014a
+    AFNI
+'''
+
+import os, sys
+import tempfile
+import logging
+import subprocess as proc
+from docopt import docopt 
+
+logging.basicConfig(level=logging.WARN,
+        format="[%(name)s %(levelname)s: %(message)s]")
+logger = logging.getLOgger(os.path.basename(__file__)) 
+
+def shutdown(tmpdir,returncode=0): 
+    '''
+    Clean up temporary files 
+    '''
+    shutil.rmtree(tmpdir)
+    sys.exit(returncode) 
+
+def run(cmd): 
+    p = proc.Popen(cmd,stdout=proc.PIPE, stderr=proc.PIPE,shell=True) 
+    out, err = p.communicate() 
+
+    if p.returncode != 0: 
+        logger.error('{} failed with returncode {}. \n STDERR: {}'.format(cmd,p.returncode,err))
+
+    return 
+
+def main(): 
+
+    arguments = docopt(__doc__) 
+
+    nifti       =   arguments['<nifti>'] 
+    output      =   arguments['<output>'] 
+    dcm         =   arguments['<dcm>'] 
+    json        =   arguments['<json>']
+
+
+    #Create temporary directory for outputting AFNI files during pipeline 
+    tmpdir = startup() 
+
+    #Get assets directory 
+    qcmon_base = os.path.abspath(os.path.join(os.path.realpath(__file__),os.path.pardir,os.path.pardir)) 
+    matlab_path = os.path.join(qcmon_base,'assets','matlab')
+
+    gen_path_cmd = r'addpath(genpath("{}"))'.format(matlab_path)
+    pipeline_cmd = 'QA_fBIRN("{}", "{}", "{}", "{}")'.format(nifti,dcm,json,output)
+
+    cmd = ';\n'.join([gen_path_cmd,pipeline_cmd])
+
+    #Make the call
+    run(cmd) 
+
+    #Shutdown
+    afni_dir = os.path.join(output,'AFNI')  
+    shutdown(afni_dir)
+
+
+
+if __name__ == '__main__': 
+    main() 
