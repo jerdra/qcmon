@@ -1,0 +1,178 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Example: flattenMaskOverlay</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2011-11-29"><meta name="DC.source" content="example.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>Example: flattenMaskOverlay</h1><!--introduction--><p>This function creates a flattened image with overlayed mask (with transparency). The mask is applied with a specified color and transparency over the original image, and the resulting image is flattened to a new image.</p><p>By Jiro Doke. Created Nov 2011.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Syntax and Description</a></li><li><a href="#2">Example</a></li></ul></div><h2>Syntax and Description<a name="1"></a></h2><p><tt><b>flattenMaskOverlay</b>(img, mask)</tt> applies a <tt>mask</tt> (defined as logical) on top of the original <tt>img</tt> and displays the result in the current axes. The mask (locations of 1's) will be displayed as a red color with 50% opacity. The resulting image will be a flat image (no use of <tt>AlphaData</tt>), and therefore will have better interactive performance (zooming, panning, data cursors). <tt>img</tt> must be MxN (gray scale) or MxNx3 (RGB). Supported data types are <tt>double</tt>, <tt>uint8</tt>, <tt>uint16</tt>. <tt>mask</tt> must be an MxN <tt>logical</tt> array.</p><p><tt><b>flattenMaskOverlay</b>(img, mask, alphaLevel, overlayColor)</tt> specifies the opacity level and the overlay color of the mask. <tt>alphaLevel</tt> must be a scalar between 0 to 1. Pass in [] for default (0.5). <tt>overlayColor</tt> can be a string indicating the color (see list below) or a 1x3 double array (0 to 1) representing the RGB values. Default is red.            b     blue            g     green            r     red            c     cyan            m     magenta            y     yellow            k     black            w     white</p><p><tt>im = <b>flattenMaskOverlay</b>(img, mask, ...)</tt> returns the image data without displaying the image.</p><h2>Example<a name="2"></a></h2><p>Load image of Mandrill and convert indexed image to RGB. <tt>rgb</tt> is a double precision true color.</p><pre class="codeinput">load <span class="string">mandrill</span>
+rgb = ind2rgb(X, map);
+whos <span class="string">rgb</span>
+</pre><pre class="codeoutput">  Name        Size                 Bytes  Class     Attributes
+
+  rgb       480x500x3            5760000  double              
+
+</pre><p>Display original image.</p><pre class="codeinput">image(rgb);
+axis <span class="string">image</span> <span class="string">off</span>;
+title(<span class="string">'Original image'</span>);
+</pre><img vspace="5" hspace="5" src="example_01.png" alt=""> <p>Create a mask that corresponds to pixels with each color value greater than 0.3. Display the image in black and white.</p><pre class="codeinput">mask = rgb(:, :, 1) &gt; 0.3 &amp; rgb(:, :, 2) &gt; 0.3 &amp; rgb(:, :, 3) &gt; 0.3;
+image(mask);
+colormap(gray(2));
+axis <span class="string">image</span> <span class="string">off</span>;
+title(<span class="string">'Mask image'</span>);
+</pre><img vspace="5" hspace="5" src="example_02.png" alt=""> <p>Overlay with a red mask and 50% opacity (default).</p><pre class="codeinput">flattenMaskOverlay(rgb, mask);
+title(<span class="string">'Red mask with 50% opacity'</span>);
+</pre><img vspace="5" hspace="5" src="example_03.png" alt=""> <p>Overlay with a green mask and 100% opacity.</p><pre class="codeinput">flattenMaskOverlay(rgb, mask, 1, <span class="string">'g'</span>);
+title(<span class="string">'Green mask with 100% opacity'</span>);
+</pre><img vspace="5" hspace="5" src="example_04.png" alt=""> <p>Get the flattened image data. <tt>newIm</tt> is the same size and data type as the original image.</p><pre class="codeinput">newIm = flattenMaskOverlay(rgb, mask, .6, [1, 1, .5]);
+image(newIm);
+axis <span class="string">image</span> <span class="string">off</span>;
+whos <span class="string">newIm</span>
+</pre><pre class="codeoutput">  Name         Size                 Bytes  Class     Attributes
+
+  newIm      480x500x3            5760000  double              
+
+</pre><img vspace="5" hspace="5" src="example_05.png" alt=""> <p class="footer">Copyright 2011 The MathWorks, Inc.<br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+%% Example: flattenMaskOverlay
+%
+% This function creates a flattened image with overlayed mask (with
+% transparency). The mask is applied with a specified color and
+% transparency over the original image, and the resulting image is
+% flattened to a new image.
+%
+% By Jiro Doke. Created Nov 2011.
+% Copyright 2011 The MathWorks, Inc.
+
+%% Syntax and Description
+% |*flattenMaskOverlay*(img, mask)| applies a |mask| (defined as logical)
+% on top of the original |img| and displays the result in the current axes.
+% The mask (locations of 1's) will be displayed as a red color with 50%
+% opacity. The resulting image will be a flat image (no use of
+% |AlphaData|), and therefore will have better interactive performance
+% (zooming, panning, data cursors). |img| must be MxN (gray scale) or MxNx3
+% (RGB). Supported data types are |double|, |uint8|, |uint16|. |mask| must
+% be an MxN |logical| array.
+%
+% |*flattenMaskOverlay*(img, mask, alphaLevel, overlayColor)| specifies the
+% opacity level and the overlay color of the mask. |alphaLevel| must be a
+% scalar between 0 to 1. Pass in [] for default (0.5). |overlayColor| can
+% be a string indicating the color (see list below) or a 1x3 double array
+% (0 to 1) representing the RGB values. Default is red.
+%            b     blue
+%            g     green
+%            r     red
+%            c     cyan
+%            m     magenta
+%            y     yellow
+%            k     black
+%            w     white
+%
+% |im = *flattenMaskOverlay*(img, mask, ...)| returns the image data
+% without displaying the image.
+
+%% Example
+% Load image of Mandrill and convert indexed image to RGB. |rgb| is a
+% double precision true color.
+
+load mandrill
+rgb = ind2rgb(X, map);
+whos rgb
+
+%%
+% Display original image.
+
+image(rgb);
+axis image off;
+title('Original image');
+
+%%
+% Create a mask that corresponds to pixels with each color value greater
+% than 0.3. Display the image in black and white.
+
+mask = rgb(:, :, 1) > 0.3 & rgb(:, :, 2) > 0.3 & rgb(:, :, 3) > 0.3;
+image(mask);
+colormap(gray(2));
+axis image off;
+title('Mask image');
+
+%%
+% Overlay with a red mask and 50% opacity (default).
+
+flattenMaskOverlay(rgb, mask);
+title('Red mask with 50% opacity');
+
+%%
+% Overlay with a green mask and 100% opacity.
+
+flattenMaskOverlay(rgb, mask, 1, 'g');
+title('Green mask with 100% opacity');
+
+%%
+% Get the flattened image data. |newIm| is the same size and data type as
+% the original image.
+
+newIm = flattenMaskOverlay(rgb, mask, .6, [1, 1, .5]);
+image(newIm);
+axis image off;
+whos newIm
+##### SOURCE END #####
+--></body></html>

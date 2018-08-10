@@ -135,7 +135,7 @@ try
     j.std_FA = stdFA;
     j.nyq_ratio = NyqRatio; 
     j.pipeline = 'qa_dti';
-    encoded_j = jsonencode(j); 
+    encoded_j = savejson('',j); 
     output = strcat(output_prefix, '_qadti_output.json');
     fid = fopen(output, 'w');
     fprintf(fid,encoded_j); 

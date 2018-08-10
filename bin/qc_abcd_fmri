@@ -26,10 +26,11 @@ import tempfile
 import logging
 import subprocess as proc
 from docopt import docopt 
+import shutil
 
 logging.basicConfig(level=logging.WARN,
         format="[%(name)s %(levelname)s: %(message)s]")
-logger = logging.getLOgger(os.path.basename(__file__)) 
+logger = logging.getLogger(os.path.basename(__file__)) 
 
 def shutdown(tmpdir,returncode=0): 
     '''
@@ -39,9 +40,11 @@ def shutdown(tmpdir,returncode=0):
     sys.exit(returncode) 
 
 def run(cmd): 
+
+    logger.info('Running command: \n {}'.format(cmd))
+
     p = proc.Popen(cmd,stdout=proc.PIPE, stderr=proc.PIPE,shell=True) 
     out, err = p.communicate() 
-
     if p.returncode != 0: 
         logger.error('{} failed with returncode {}. \n STDERR: {}'.format(cmd,p.returncode,err))
 
@@ -56,25 +59,36 @@ def main():
     dcm         =   arguments['<dcm>'] 
     json        =   arguments['<json>']
 
+    verbose     =   arguments['--verbose']
 
-    #Create temporary directory for outputting AFNI files during pipeline 
-    tmpdir = startup() 
+    if verbose: logger.setLevel(logging.INFO)
+
+    #Make output directory
+    output = os.path.abspath(os.path.join(output,os.path.pardir))
+    afni_dir = os.path.join(output,'AFNI')  
+
+    #Clear pre-existing outputs 
+    try: 
+        shutil.rmtree(afni_dir)
+    except OSError: 
+        pass 
 
     #Get assets directory 
     qcmon_base = os.path.abspath(os.path.join(os.path.realpath(__file__),os.path.pardir,os.path.pardir)) 
     matlab_path = os.path.join(qcmon_base,'assets','matlab')
 
-    gen_path_cmd = r'addpath(genpath("{}"))'.format(matlab_path)
-    pipeline_cmd = 'QA_fBIRN("{}", "{}", "{}", "{}")'.format(nifti,dcm,json,output)
-
-    cmd = ';\n'.join([gen_path_cmd,pipeline_cmd])
+    gen_path_cmd = r"addpath(genpath('{}'))".format(matlab_path)
+    pipeline_cmd = r"fBIRN_QA('{}', '{}', '{}', '{}')".format(nifti,dcm,json,output)
+    cmd = '; '.join([gen_path_cmd,pipeline_cmd])
 
     #Make the call
-    run(cmd) 
+    run('matlab -softwareopengl -nodisplay -nosplash -r "{}"'.format(cmd)) 
 
     #Shutdown
-    afni_dir = os.path.join(output,'AFNI')  
+    logger.info('Removing AFNI directory: {}'.format(afni_dir))
     shutdown(afni_dir)
+
+    logger.info('Completed successfully!')
 
 
 

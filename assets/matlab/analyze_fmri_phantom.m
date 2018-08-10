@@ -270,7 +270,7 @@ try
     print('-f1', '-djpeg', fig1name)
     print('-f2', '-djpeg', fig2name)
     close all
-    exit
+    
     
     %Write into JSON
     j_struct.mean = meanI; 
@@ -281,12 +281,12 @@ try
     j_struct.SFNR = sfnrI; 
     j_struct.RDC = rdc;
     j_struct.pipeline = 'qc_fbirn_fmri'; 
-    j_encoded = jsonencode(j_struct)
+    j_encoded = savejson('',j_struct); 
     %Write into file
     outflname=strcat(output_prefix, '_stats.json');
     fid=fopen(outflname,'w');
     count=fprintf(fid, j_encoded);
-    
+    exit
 catch
     exit(1)
 end
