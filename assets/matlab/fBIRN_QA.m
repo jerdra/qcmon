@@ -8,12 +8,6 @@ Usage:
     output:         Folder to output
 %}
 
-addpath(genpath('/mnt/tigrlab/scratch/jjeyachandra/test_env/archive/code/qcmon/assets/matlab')); 
-nii = '/scratch/jjeyachandra/test_env/archive/data/OPT/data/nii/OPT01_LA1_PHA_FBN0035/OPT01_LA1_PHA_FBN0035_ABCD-QAfMRI_09_ABCD-QA-fMRI.nii.gz'; 
-dcm = '/scratch/jjeyachandra/test_env/archive/data/OPT/data/dcm/OPT01_LA1_PHA_FBN0035/OPT01_LA1_PHA_FBN0035_ABCD-QAfMRI_09_ABCD-QA-fMRI.dcm';
-json = '/scratch/jjeyachandra/test_env/archive/data/OPT/data/nii/OPT01_LA1_PHA_FBN0035/OPT01_LA1_PHA_FBN0035_ABCD-QAfMRI_09_ABCD-QA-fMRI.json'; 
-output = '/scratch/jjeyachandra/test_env/archive/data/OPT/qc/OPT01_LA1_PHA_FBN0035';
-
 %================Check inputs===========% 
 tic
 
