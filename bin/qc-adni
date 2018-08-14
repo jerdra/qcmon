@@ -312,6 +312,9 @@ def write_report(intensities,contrasts,output):
     j_dict = {'int{}'.format(i):intensity for i,intensity in enumerate(intensities)}
     j_dict.update({'contrast{}'.format(i):contrast for i,contrast in enumerate(contrasts)})
 
+    #Add pipeline signature 
+    j_dict.update({'pipeline' : 'qc adni'})
+
     with open(output+'_stats.json','w') as jfile: 
 
         json.dump(j_dict,jfile) 

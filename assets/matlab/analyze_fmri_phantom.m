@@ -280,10 +280,10 @@ try
     j_struct.SNR = snr; 
     j_struct.SFNR = sfnrI; 
     j_struct.RDC = rdc;
-    j_struct.pipeline = 'qc_fbirn_fmri'; 
+    j_struct.pipeline = 'qc fbirn fmri'; 
     j_encoded = savejson('',j_struct); 
     %Write into file
-    outflname=strcat(output_prefix, '_stats.json');
+    outflname=strcat(output_prefix, '_qc_fbirn_fmri.json');
     fid=fopen(outflname,'w');
     count=fprintf(fid, j_encoded);
     exit

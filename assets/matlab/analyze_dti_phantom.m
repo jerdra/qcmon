@@ -134,9 +134,9 @@ try
     j.avg_FA = aveFA;
     j.std_FA = stdFA;
     j.nyq_ratio = NyqRatio; 
-    j.pipeline = 'qa_dti';
+    j.pipeline = 'qa dti';
     encoded_j = savejson('',j); 
-    output = strcat(output_prefix, '_qadti_output.json');
+    output = strcat(output_prefix, '_qa_dti.json');
     fid = fopen(output, 'w');
     fprintf(fid,encoded_j); 
     fclose(fid); 
