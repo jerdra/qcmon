@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 """
 Usage:
-    qc-headers <dicom> <standard> <log>
+    qc-headers [--dti] <dicom> <standard> <output>
 
 Arguments:
     <dicom>         input dicom file to check.
     <standard>      'gold standard' dicom file to compare with.
     <output>        output log file.
 
+Options:
+    --dti      is it dti, will add in a comparison to gold standard bvals and bvecs
+
 Diffs the non-ignored header fields (see DEFAULT_IGNORED_HEADERS) of dicom and
 standard. Any differences found will be detailed in the output file.
-
 If the output file already exists, it will be appended to instead of overwritten
 so logs can be built on a session-wise, subject-wise, or project-wise basis.
-
 NB: Settings are currently managed using the following global variables:
     DEFAULT_IGNORED_HEADERS
     INTEGER_TOLERANCES
     DECIMAL_TOLERANCES
-
 This might (should?) be moved to a dedicated configuration file at some point.
 """
 import os, sys
@@ -26,6 +26,7 @@ import collections
 import logging
 import pydicom as dcm
 import numpy as np
+from docopt import docopt
 
 logging.basicConfig(level=logging.WARN, format="[%(name)s] %(levelname)s: %(message)s")
 logger = logging.getLogger(os.path.basename(__file__))
@@ -181,9 +182,7 @@ DEFAULT_TOLERANCES = Tolerances(
 def compare_headers(stdhdr, cmphdr, tolerances=None, ignore=None):
     """
     Accepts two pydicom objects and prints out header value differences.
-
     Headers in ignore set are ignored.
-
     Returns a tuple containing a list of mismatched headers (as a list of
     Mismatch objects)
     """
@@ -244,14 +243,69 @@ def get_header(filename):
     Ensures the input dicom exists, and then attempts to parse it.
     """
     if not os.path.isfile(filename):
-        sys.exit('ERROR: input {} does not exist'.format(filename))
+        logger.error('ERROR: input {} does not exist'.format(filename))
+        sys.exit(1)
     try:
         hdr = dcm.read_file(filename)
         return hdr
     except:
-        sys.exit('ERROR: failed to parse {}'.format(filename))
+        logger.error('ERROR: failed to parse {}'.format(filename))
+        sys.exit(1)
 
-def main(dicom, standard, output):
+def read_bvecs(filename):
+    try:
+        with open(filename, 'r') as f:
+            a = np.fromstring(''.join(f.read().splitlines()),sep=" ").flatten()
+            return a
+    except:
+        logger.error('ERROR: failed to parse {}'.format(filename))
+        sys.exit(1)
+
+def check_bvecs(cmpdcm, stddcm):
+    logger.error("Checking bvecs and bvals")
+    mismatches = []
+
+
+
+    vecpath=cmpdcm.replace('.dcm', '.bvec').replace('/dcm/' , '/nii/')
+    valpath=cmpdcm.replace('.dcm', '.bval').replace('/dcm/' , '/nii/')
+    stdvecpath=stddcm.replace('.dcm','.bvec')
+    stdvalpath=stddcm.replace('.dcm','.bval')
+
+
+    if not os.path.isfile(stdvecpath) or not os.path.isfile(stdvalpath):
+        logger.error('ERROR: gold standard bvals or bvecs not found.')
+        mismatches.append(Mismatch(header="b vector/value", expected="expected", actual="GOLD STANDARD FILE NOT FOUND", tolerance="None"))
+    elif not os.path.isfile(vecpath):
+        logger.error('ERROR: bvec file not found, skipping the check: {}'.format(vecpath))
+        mismatches.append(Mismatch(header="b vector", expected="expected", actual="BVEC FILE NOT FOUND", tolerance="None"))
+    elif not os.path.isfile(valpath):
+        logger.error('ERROR: bvalue file not found: {}'.format(valpath))
+        mismatches.append(Mismatch(header="b value", expected="expected", actual="BVAL FILE NOT FOUND", tolerance="None"))
+    else:
+        bvec = read_bvecs(vecpath)
+        bval= read_bvecs(valpath)
+        stdbvec =read_bvecs(stdvecpath)
+        stdbval= read_bvecs(stdvalpath)
+
+        if not np.array_equal(bvec, stdbvec):
+            mismatches.append(Mismatch(header="b vector", expected="expected", actual="not matched!!", tolerance="None"))
+        if not np.array_equal(bval,stdbval):
+            mismatches.append(Mismatch(header="b value", expected="expected", actual="not matched!!", tolerance="None"))
+
+    return mismatches
+
+
+
+def main():
+
+    arguments = docopt(__doc__)
+
+    dicom           =   arguments['<dicom>']
+    standard        =   arguments['<standard>']
+    output          =   arguments['<output>']
+
+    dti             =   arguments['--dti']
 
     logging.info('Starting')
 
@@ -271,14 +325,20 @@ def main(dicom, standard, output):
 
     mismatches = compare_headers(standardHeader, dicomHeader, tolerances=tolerances, ignore=ignore)
 
+    if dti:
+        dti_diffs = check_bvecs(dicom, standard)
+        mismatches.extend(dti_diffs)
+
     print('{} mismatches for {}'.format(len(mismatches), dicom))
+
+    print(mismatches)
+
     if os.path.isfile(output):
         writeMode = 'ab'
     else:
-        writeMode = 'wb'
+        writeMode='wb'
 
     with open(output, writeMode) as f:
-
         # write an empty file if we don't have any mismatches
         if len(mismatches) == 0:
             sys.exit(0)
@@ -288,7 +348,4 @@ def main(dicom, standard, output):
                              dicom, m.header, m.expected, m.actual, m.tolerance))
 
 if __name__ == '__main__':
-    if len(sys.argv) == 4:
-        main(sys.argv[1], sys.argv[2], sys.argv[3])
-    else:
-        print(__doc__)
+    main()
