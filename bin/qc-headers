@@ -261,41 +261,32 @@ def read_bvecs(filename):
         logger.error('ERROR: failed to parse {}'.format(filename))
         sys.exit(1)
 
+
 def check_bvecs(cmpdcm, stddcm):
-    logger.error("Checking bvecs and bvals")
-    mismatches = []
 
+    Val = collections.namedtuple('Val', ['source', 'path'])
+    compare={'bval':True, 'bvec':True}
 
+    #i can't decide if this is sketchy
+    vals= {'bval':[Val(source="gold standard", path=stddcm.replace('.dcm','.bval')),
+        Val(source="comparison",  path=cmpdcm.replace('.dcm', '.bval').replace('/dcm/' , '/nii/'))],
+        'bvec':[Val(source="gold standard",  path=stddcm.replace('.dcm','.bvec')),
+        Val(source="comparison", path=cmpdcm.replace('.dcm', '.bvec').replace('/dcm/' , '/nii/'))]}
 
-    vecpath=cmpdcm.replace('.dcm', '.bvec').replace('/dcm/' , '/nii/')
-    valpath=cmpdcm.replace('.dcm', '.bval').replace('/dcm/' , '/nii/')
-    stdvecpath=stddcm.replace('.dcm','.bvec')
-    stdvalpath=stddcm.replace('.dcm','.bval')
+    mismatches=[]
 
-
-    if not os.path.isfile(stdvecpath) or not os.path.isfile(stdvalpath):
-        logger.error('ERROR: gold standard bvals or bvecs not found.')
-        mismatches.append(Mismatch(header="b vector/value", expected="expected", actual="GOLD STANDARD FILE NOT FOUND", tolerance="None"))
-    elif not os.path.isfile(vecpath):
-        logger.error('ERROR: bvec file not found, skipping the check: {}'.format(vecpath))
-        mismatches.append(Mismatch(header="b vector", expected="expected", actual="BVEC FILE NOT FOUND", tolerance="None"))
-    elif not os.path.isfile(valpath):
-        logger.error('ERROR: bvalue file not found: {}'.format(valpath))
-        mismatches.append(Mismatch(header="b value", expected="expected", actual="BVAL FILE NOT FOUND", tolerance="None"))
-    else:
-        bvec = read_bvecs(vecpath)
-        bval= read_bvecs(valpath)
-        stdbvec =read_bvecs(stdvecpath)
-        stdbval= read_bvecs(stdvalpath)
-
-        if not np.array_equal(bvec, stdbvec):
-            mismatches.append(Mismatch(header="b vector", expected="expected", actual="not matched!!", tolerance="None"))
-        if not np.array_equal(bval,stdbval):
-            mismatches.append(Mismatch(header="b value", expected="expected", actual="not matched!!", tolerance="None"))
+    for type in vals:  #for each of bvals and bvecs
+        for x in vals[type]: #for each path
+            if not os.path.isfile(x.path):
+                compare[type]=False  #don't compare the files bc one of them doesnt exist
+                logger.error('ERROR: {} {} file not found.'.format(x.source,type))
+                mismatches.append(Mismatch(header="{}".format(type), expected="expected", actual="{} file not found!!".format(x.source), tolerance="None"))
+        if compare[type]==True:
+                if not np.array_equal(read_bvecs(vals[type][0].path), read_bvecs(vals[type][1].path)): #there will only ever be two input files so i'm probably safe
+                    mismatches.append(Mismatch(header=type, expected="expected", actual="not matched!!", tolerance="None"))
+                compare[type]=False
 
     return mismatches
-
-
 
 def main():
 
