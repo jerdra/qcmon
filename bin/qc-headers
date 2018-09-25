@@ -322,8 +322,6 @@ def main():
 
     print('{} mismatches for {}'.format(len(mismatches), dicom))
 
-    print(mismatches)
-
     if os.path.isfile(output):
         writeMode = 'ab'
     else:
