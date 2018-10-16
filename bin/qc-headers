@@ -274,7 +274,6 @@ def files_equal(path_f1,path_f2):
 
     try: 
         with open(path_f1,'r') as f1, open(path_f2,'r') as f2: 
-
             str1 = f1.readlines() 
             str2 = f2.readlines() 
     except IOError: 
