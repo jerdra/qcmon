@@ -261,32 +261,56 @@ def read_bvecs(filename):
         logger.error('ERROR: failed to parse {}'.format(filename))
         sys.exit(1)
 
+def files_equal(path_f1,path_f2): 
+    '''
+    Helper function to compare two files 
+    Arguments: 
+        path_f1                  Path to file 1
+        path_f2                  Path to file 2
 
-def check_bvecs(cmpdcm, stddcm):
+    Outputs: 
+        True or False
+    '''
 
-    Val = collections.namedtuple('Val', ['source', 'path'])
-    compare={'bval':True, 'bvec':True}
+    try: 
+        with open(path_f1,'r') as f1, open(path_f2,'r') as f2: 
+            str1 = f1.readlines() 
+            str2 = f2.readlines() 
+    except IOError: 
+        raise
 
-    #i can't decide if this is sketchy
-    vals= {'bval':[Val(source="gold standard", path=stddcm.replace('.dcm','.bval')),
-        Val(source="comparison",  path=cmpdcm.replace('.dcm', '.bval').replace('/dcm/' , '/nii/'))],
-        'bvec':[Val(source="gold standard",  path=stddcm.replace('.dcm','.bvec')),
-        Val(source="comparison", path=cmpdcm.replace('.dcm', '.bvec').replace('/dcm/' , '/nii/'))]}
+    return str1 == str2 
 
-    mismatches=[]
 
-    for type in vals:  #for each of bvals and bvecs
-        for x in vals[type]: #for each path
-            if not os.path.isfile(x.path):
-                compare[type]=False  #don't compare the files bc one of them doesnt exist
-                logger.error('ERROR: {} {} file not found.'.format(x.source,type))
-                mismatches.append(Mismatch(header="{}".format(type), expected="expected", actual="{} file not found!!".format(x.source), tolerance="None"))
-        if compare[type]==True:
-                if not np.array_equal(read_bvecs(vals[type][0].path), read_bvecs(vals[type][1].path)): #there will only ever be two input files so i'm probably safe
-                    mismatches.append(Mismatch(header=type, expected="expected", actual="not matched!!", tolerance="None"))
-                compare[type]=False
+def check_bfile(cmpdcm, stddcm, btype):
 
-    return mismatches
+    '''
+    Perform a comparison between b-file in standards and candidate file
+
+    Arguments: 
+        cmpdcm                  Path to dcm file of candidate
+        stddcm                  Path to dcm file of standard
+        btype                   Type of b-file ('bvec','bval') 
+    '''
+
+    btype = '.' + btype
+    bfile = cmpdcm.replace('dcm','nii').replace('.nii',btype)
+    std_bfile = stddcm.replace('.dcm',btype)
+
+    try: 
+
+        if not files_equal(bfile, std_bfile) == True: 
+            error = 'does not match!'
+        else: 
+            #Files identical return nothing
+            return [] 
+
+    except IOError: 
+        error = 'not found!'
+
+    return [Mismatch(header= btype, expected='expected',
+        actual= error, tolerance='None')] 
+
 
 def main():
 
@@ -317,8 +341,8 @@ def main():
     mismatches = compare_headers(standardHeader, dicomHeader, tolerances=tolerances, ignore=ignore)
 
     if dti:
-        dti_diffs = check_bvecs(dicom, standard)
-        mismatches.extend(dti_diffs)
+        mismatches.extend(check_bfile(dicom, standard, 'bvec')) 
+        mismatches.extend(check_bfile(dicom, standard, 'bval')) 
 
     print('{} mismatches for {}'.format(len(mismatches), dicom))
 
