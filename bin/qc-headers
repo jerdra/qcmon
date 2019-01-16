@@ -341,7 +341,7 @@ def main():
     mismatches = compare_headers(standardHeader, dicomHeader, tolerances=tolerances, ignore=ignore)
 
     if dti:
-        mismatches.extend(check_bfile(dicom, standard, 'bvec')) 
+        #mismatches.extend(check_bfile(dicom, standard, 'bvec')) 
         mismatches.extend(check_bfile(dicom, standard, 'bval')) 
 
     print('{} mismatches for {}'.format(len(mismatches), dicom))
