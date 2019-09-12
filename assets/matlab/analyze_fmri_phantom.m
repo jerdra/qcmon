@@ -65,7 +65,7 @@ try
 
     %% enter start and end TR
     i1 = 5; % remove the first 5 TRs to double-ensure we are stable.
-    i2 = 212; % end of the run (grab this from the input dimensions).
+    [~,~,~,i2] = size(I4d); % end of the run (grab this from the input dimensions).
 
     N = i2 - i1 + 1; % num time frames
     M = r2 - r1 + 1; % num ROI's
