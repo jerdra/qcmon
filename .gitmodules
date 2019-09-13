@@ -1,0 +1,6 @@
+[submodule "assets/matlab/FIONA-QC-PHANTOM"]
+	path = assets/matlab/FIONA-QC-PHANTOM
+	url = https://github.com/jerdra/FIONA-QC-PHANTOM.git
+[submodule "assets/matlab/jsonlab"]
+	path = assets/matlab/jsonlab
+	url = https://github.com/fangq/jsonlab.git
