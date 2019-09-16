@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+"""
+Usage:
+    qc-fbirn-fmri <nifti> <output_prefix>
+
+Arguments:
+    nifti:         Absolute path to 4D nifti file of fBIRN phantom
+    output :       Output directory
+
+Details:
+    Runs the included FIONA-QC-PHANTOM multiband pipeline script on ABCD fmri phantom data.
+
+    Outputs:
+        output/Freq_Graph.tif
+        output/Ghost_Graph.tif
+        output/Ghost_Region.tif <not working due to MATLAB LINUX transparency error!>
+        output/Iave.tif
+        output/Idiff_noise.tif
+        output/Isd.tif
+        output/sfnr.tif
+        output/SignalTime_Graph.tif
+        output/SpatialDrift_Graph.tif
+        output/Weisskoff_Graph.tif
+        output/QA_metrics.json
+
+    Requires MATLAB.
+"""
+
+import os, sys
+import qcmon as qc
+import logging
+from shutil import rmtree
+
+logging.basicConfig(level=logging.WARN, format="[%(name)s] %(levelname)s: %(message)s")
+logger = logging.getLogger(os.path.basename(__file__))
+
+def main(nifti, output):
+
+    logging.info('Starting')
+
+    if not os.path.isdir(output):
+        os.makedir(output)
+
+
+    #Add path required for FIONA QC PHANTOM
+    matlabPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'assets/matlab')
+
+    cmd = (r"addpath(genpath('{}')); MB_fBIRN_QA_app_main('{}','{}')".format(
+                                              matlabPath, nifti, output))
+    qc.utilities.run('matlab -nodisplay -nosplash -r "' + cmd + '"')
+    rmtree(os.path.join(output,'AFNI'))
+
+if __name__ == '__main__':
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])
+    else:
+        print(__doc__)
+
