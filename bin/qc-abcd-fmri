@@ -29,6 +29,7 @@ Details:
 import os, sys
 import qcmon as qc
 import logging
+from shutil import rmtree
 
 logging.basicConfig(level=logging.WARN, format="[%(name)s] %(levelname)s: %(message)s")
 logger = logging.getLogger(os.path.basename(__file__))
@@ -44,9 +45,10 @@ def main(nifti, output):
     #Add path required for FIONA QC PHANTOM
     matlabPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'assets/matlab')
 
-    cmd = (r"addpath(genpath('{}')); MB_fBIRN_phantom_ABCD('{}','{}')".format(
+    cmd = (r"addpath(genpath('{}')); MB_fBIRN_QA_app_main('{}','{}')".format(
                                               matlabPath, nifti, output))
     qc.utilities.run('matlab -nodisplay -nosplash -r "' + cmd + '"')
+    rmtree(os.path.join(output,'AFNI'))
 
 if __name__ == '__main__':
     if len(sys.argv) == 3:
