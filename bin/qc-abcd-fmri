@@ -38,9 +38,10 @@ def main(nifti, output):
 
     logging.info('Starting')
 
-    if not os.path.isdir(output):
+    try:
         os.mkdir(output)
-
+    except OSError:
+        logger.warning('{} already exists, skipping creation'.format(output))
 
     #Add path required for FIONA QC PHANTOM
     matlabPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'assets/matlab')
