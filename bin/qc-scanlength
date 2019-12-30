@@ -33,9 +33,9 @@ def main(nifti, output):
         length = 1
 
     if os.path.isfile(output):
-        writeMode = 'ab'
+        writeMode = 'a'
     else:
-        writeMode = 'wb'
+        writeMode = 'w'
 
     with open(output , writeMode) as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
@@ -46,4 +46,3 @@ if __name__ == '__main__':
         main(sys.argv[1], sys.argv[2])
     else:
         print(__doc__)
-

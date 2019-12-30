@@ -261,25 +261,25 @@ def read_bvecs(filename):
         logger.error('ERROR: failed to parse {}'.format(filename))
         sys.exit(1)
 
-def files_equal(path_f1,path_f2): 
+def files_equal(path_f1,path_f2):
     '''
-    Helper function to compare two files 
-    Arguments: 
+    Helper function to compare two files
+    Arguments:
         path_f1                  Path to file 1
         path_f2                  Path to file 2
 
-    Outputs: 
+    Outputs:
         True or False
     '''
 
-    try: 
-        with open(path_f1,'r') as f1, open(path_f2,'r') as f2: 
-            str1 = f1.readlines() 
-            str2 = f2.readlines() 
-    except IOError: 
+    try:
+        with open(path_f1,'r') as f1, open(path_f2,'r') as f2:
+            str1 = f1.readlines()
+            str2 = f2.readlines()
+    except IOError:
         raise
 
-    return str1 == str2 
+    return str1 == str2
 
 
 def check_bfile(cmpdcm, stddcm, btype):
@@ -287,29 +287,29 @@ def check_bfile(cmpdcm, stddcm, btype):
     '''
     Perform a comparison between b-file in standards and candidate file
 
-    Arguments: 
+    Arguments:
         cmpdcm                  Path to dcm file of candidate
         stddcm                  Path to dcm file of standard
-        btype                   Type of b-file ('bvec','bval') 
+        btype                   Type of b-file ('bvec','bval')
     '''
 
     btype = '.' + btype
     bfile = cmpdcm.replace('dcm','nii').replace('.nii',btype)
     std_bfile = stddcm.replace('.dcm',btype)
 
-    try: 
+    try:
 
-        if not files_equal(bfile, std_bfile) == True: 
+        if not files_equal(bfile, std_bfile) == True:
             error = 'does not match!'
-        else: 
+        else:
             #Files identical return nothing
-            return [] 
+            return []
 
-    except IOError: 
+    except IOError:
         error = 'not found!'
 
     return [Mismatch(header= btype, expected='expected',
-        actual= error, tolerance='None')] 
+        actual= error, tolerance='None')]
 
 
 def main():
@@ -341,15 +341,15 @@ def main():
     mismatches = compare_headers(standardHeader, dicomHeader, tolerances=tolerances, ignore=ignore)
 
     if dti:
-        #mismatches.extend(check_bfile(dicom, standard, 'bvec')) 
-        mismatches.extend(check_bfile(dicom, standard, 'bval')) 
+        #mismatches.extend(check_bfile(dicom, standard, 'bvec'))
+        mismatches.extend(check_bfile(dicom, standard, 'bval'))
 
     print('{} mismatches for {}'.format(len(mismatches), dicom))
 
     if os.path.isfile(output):
-        writeMode = 'ab'
+        writeMode = 'a'
     else:
-        writeMode='wb'
+        writeMode='w'
 
     with open(output, writeMode) as f:
         # write an empty file if we don't have any mismatches
