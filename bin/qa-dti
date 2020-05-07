@@ -39,15 +39,16 @@ Designed by Sofia Chavez, packaged and maintained by Joseph Viviano 2014-17.
 
 See qa-dti --help for usage.
 """
-import os, sys
+import os
+import sys
 import tempfile
 import shutil
 import logging
 import subprocess as proc
-import argparse
 from docopt import docopt
 
-logging.basicConfig(level=logging.WARN, format="[%(name)s] %(levelname)s: %(message)s")
+logging.basicConfig(level=logging.WARN,
+                    format="[%(name)s] %(levelname)s: %(message)s")
 logger = logging.getLogger(os.path.basename(__file__))
 tmpdir = tempfile.mkdtemp(prefix='qa-dti-')
 
@@ -80,7 +81,7 @@ def main(nifti, bvec, bval, output_prefix, accel='n'):
                                    nifti=nifti, t=tmpdir, bvec=bvec, bval=bval))
 
     # ensure FA map is in the tmp directory (.nii or .nii.gz)
-    fa = filter(lambda x: 'FA.nii' in x, os.listdir(tmpdir))
+    fa = [x for x in os.listdir(tmpdir) if 'FA.nii' in x]
 
     if len(fa) > 1:
         logger.info('found multiple FA candidates {}, using {}'.format(fa, fa[0]))
