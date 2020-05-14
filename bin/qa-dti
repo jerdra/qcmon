@@ -4,18 +4,18 @@ Compute an FA map of the input file, and then runs the included MATLAB
 'analyze_dti_phantom.m' script on these data.
 REQUIRES: MATLAB/R2014a, FSL
 
-Usage: 
-    qa-dti [options] <nifti> <bvec> <bval> <output_prefix> 
+Usage:
+    qa-dti [options] <nifti> <bvec> <bval> <output_prefix>
 
-Arguments: 
-    <nifti>                     4D NIfTi volume, spherical phantom DTi scan 
-    <bvec>                      Associated bvec of DTi scan 
-    <bval>                      Associated bval of DTi scan 
-    <output_prefix>             Output folder of qc metrics 
+Arguments:
+    <nifti>                     4D NIfTi volume, spherical phantom DTi scan
+    <bvec>                      Associated bvec of DTi scan
+    <bval>                      Associated bval of DTi scan
+    <output_prefix>             Output folder of qc metrics
 
-Optional: 
-    -v,--verbose                Verbose log output 
-    -a,--accel                  [y/n] Nyquist accelerated [default -n] 
+Optional:
+    -v,--verbose                Verbose log output
+    -a,--accel                  Nyquist accelerated [default: False]
 
 Outputs:
     ${output_prefix}B0Distortion-NPAR.jpg
@@ -39,15 +39,16 @@ Designed by Sofia Chavez, packaged and maintained by Joseph Viviano 2014-17.
 
 See qa-dti --help for usage.
 """
-import os, sys
+import os
+import sys
 import tempfile
 import shutil
 import logging
 import subprocess as proc
-import argparse
 from docopt import docopt
 
-logging.basicConfig(level=logging.WARN, format="[%(name)s] %(levelname)s: %(message)s")
+logging.basicConfig(level=logging.WARN,
+                    format="[%(name)s] %(levelname)s: %(message)s")
 logger = logging.getLogger(os.path.basename(__file__))
 tmpdir = tempfile.mkdtemp(prefix='qa-dti-')
 
@@ -80,7 +81,7 @@ def main(nifti, bvec, bval, output_prefix, accel='n'):
                                    nifti=nifti, t=tmpdir, bvec=bvec, bval=bval))
 
     # ensure FA map is in the tmp directory (.nii or .nii.gz)
-    fa = filter(lambda x: 'FA.nii' in x, os.listdir(tmpdir))
+    fa = [x for x in os.listdir(tmpdir) if 'FA.nii' in x]
 
     if len(fa) > 1:
         logger.info('found multiple FA candidates {}, using {}'.format(fa, fa[0]))
@@ -91,8 +92,8 @@ def main(nifti, bvec, bval, output_prefix, accel='n'):
     fa = os.path.join(tmpdir, fa[0])
 
     # run analyze_dti_phantom.m (matlab script)
-    #Really ugly way of getting 2nd level parent directory (qcmon home directory) 
-    output_path = os.path.abspath(output_prefix) 
+    #Really ugly way of getting 2nd level parent directory (qcmon home directory)
+    output_path = os.path.abspath(output_prefix)
     qcmon_base = os.path.abspath(os.path.join(os.path.realpath(__file__),os.path.pardir,os.path.pardir))
     matlab_path = os.path.join(qcmon_base,'assets/matlab')
 
@@ -106,15 +107,15 @@ def main(nifti, bvec, bval, output_prefix, accel='n'):
 if __name__ == '__main__':
     logger.info('Starting')
 
-    #Parse arguments 
-    arguments = docopt(__doc__) 
-    nifti =                          arguments['<nifti>'] 
-    bval  =                          arguments['<bval>'] 
-    bvec  =                          arguments['<bvec>'] 
-    output=                          arguments['<output_prefix>'] 
+    #Parse arguments
+    arguments = docopt(__doc__)
+    nifti =                          arguments['<nifti>']
+    bval  =                          arguments['<bval>']
+    bvec  =                          arguments['<bvec>']
+    output=                          arguments['<output_prefix>']
 
-    verbose =                        arguments['--verbose'] 
-    accel   =                        arguments['--accel'] 
+    verbose =                        arguments['--verbose']
+    accel   =                        arguments['--accel']
 
     # debug mode
     if verbose > 0:
@@ -123,11 +124,7 @@ if __name__ == '__main__':
         logger.setLevel(logging.WARN)
 
     # acceleration on/off
-    if not accel:
-        accel = 'n'
-    if accel not in ['y', 'n']:
-        logger.error('accel={} invalid, should be y/n'.format(accel))
-        shutdown(returncode=1)
+    accel = 'y' if accel else 'n'
 
     # ensure output directory exists
     output_dir = os.path.dirname(os.path.abspath(output))
@@ -136,4 +133,3 @@ if __name__ == '__main__':
         shutdown(returncode=1)
 
     main(nifti, bvec, bval, output, accel=accel)
-

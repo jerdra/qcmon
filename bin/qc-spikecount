@@ -82,7 +82,7 @@ def main(nifti, output, bval=None):
             below = len(np.where(v_mean < np.mean(v_mean)-np.mean(v_sd))[0])
             spikecount = spikecount + above + below
 
-    with open(output, 'wb') as f:
+    with open(output, 'w') as f:
         f.write(str(spikecount) + '\n')
 
 if __name__ == '__main__':
@@ -92,4 +92,3 @@ if __name__ == '__main__':
         main(sys.argv[1], sys.argv[2], bval=sys.argv[3])
     else:
         print(__doc__)
-

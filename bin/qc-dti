@@ -42,19 +42,19 @@ def absmax(x):
     """
     return(np.max((np.abs(np.max(x)), np.abs(np.min(x)))))
 
-def float_to_int(filename): 
+def float_to_int(filename):
     '''
-    Convert space delimited text file from float to int 
+    Convert space delimited text file from float to int
     '''
 
-    with open(filename,'r') as f: 
+    with open(filename,'r') as f:
         raw_file = f.read().strip().split(' ')
 
     int_list = [str(int(float(b))) for b in raw_file]
-    write_str = ' '.join(int_list)  
+    write_str = ' '.join(int_list)
 
-    with open(filename,'w') as f: 
-        f.write(write_str) 
+    with open(filename,'w') as f:
+        f.write(write_str)
 
 def main(nifti, bvec, bval, output_prefix):
 
@@ -94,7 +94,7 @@ def main(nifti, bvec, bval, output_prefix):
     ax.set_zlim3d([-zlim, zlim])
     plt.savefig(os.path.join(output_prefix + '_directions.png'))
 
-    with open(output_prefix + '_stats.csv', 'wb') as f:
+    with open(output_prefix + '_stats.csv', 'w') as f:
         f.write('#ndirs,nb0s\n{},{}'.format(nDirs, nB0s))
 
 if __name__ == '__main__':
@@ -102,4 +102,3 @@ if __name__ == '__main__':
         main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     else:
         print(__doc__)
-

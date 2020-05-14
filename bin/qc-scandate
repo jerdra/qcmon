@@ -62,9 +62,9 @@ def main(dicom, output):
         sys.exit(1)
 
     if os.path.isfile(output):
-        writeMode = 'ab'
+        writeMode = 'a'
     else:
-        writeMode = 'wb'
+        writeMode = 'w'
 
     with open(output , writeMode) as csvfile:
         writer = csv.writer(csvfile, delimiter=',')

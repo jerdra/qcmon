@@ -119,7 +119,7 @@ def main(nifti, prefix):
 
     # write out assorted statistics
     logging.info('Writing statistics into csv')
-    with open(prefix + '_stats.csv', 'wb') as f:
+    with open(prefix + '_stats.csv', 'w') as f:
         f.write('mean_fd,n_bad_fd,%_bad_fd,global_corr,mean_sfnr\n{},{},{},{},{}'.format(
                  np.mean(fd), numBadFd, pctBadFd, gcorr, sfnr))
 
@@ -142,4 +142,3 @@ if __name__ == '__main__':
         main(sys.argv[1], sys.argv[2])
     else:
         print(__doc__)
-
